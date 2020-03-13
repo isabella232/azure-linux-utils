@@ -13,13 +13,14 @@ echo "This script takes minutes to hours depending on coredump file size ..."
 
 stext_vmlinux=0x$(nm $1 | grep _stext | cut -d' ' -f1)
 
-strings $2 | grep 'VMCOREINFO' -A68 -B2 > /tmp/_$2.vmcoreinfo.1
-pcregrep -A65 -M 'VMCOREINFO\nOSRELEASE=' /tmp/_$2.vmcoreinfo.1 > /tmp/_$2.vmcoreinfo.2
-stext_coredump=0x$(grep 'SYMBOL(_stext)=' /tmp/_$2.vmcoreinfo.2 | cut -d= -f2)
+t="/tmp/_$(basename $2)"
+strings $2 | grep 'VMCOREINFO' -A68 -B2 > $t.vmcoreinfo.1
+pcregrep -A65 -M 'VMCOREINFO\nOSRELEASE=' $t.vmcoreinfo.1 > $t.vmcoreinfo.2
+stext_coredump=0x$(grep 'SYMBOL(_stext)=' $t.vmcoreinfo.2 | cut -d= -f2)
 kaslr=$((stext_coredump-stext_vmlinux))
 echo "kaslr = $kaslr"
 
-phys_base=$(grep 'NUMBER(phys_base)=' /tmp/_$2.vmcoreinfo.2 | cut -d= -f2)
+phys_base=$(grep 'NUMBER(phys_base)=' $t.vmcoreinfo.2 | cut -d= -f2)
 echo "phys_base = $phys_base"
 
 echo "The complete crash command you likely need is:"
