@@ -16,11 +16,15 @@ stext_vmlinux=0x$(nm $1 | grep _stext | cut -d' ' -f1)
 t="/tmp/_$(basename $2)"
 strings $2 | grep 'VMCOREINFO' -A68 -B2 > $t.vmcoreinfo.1
 pcregrep -A65 -M 'VMCOREINFO\nOSRELEASE=' $t.vmcoreinfo.1 > $t.vmcoreinfo.2
-stext_coredump=0x$(grep 'SYMBOL(_stext)=' $t.vmcoreinfo.2 | cut -d= -f2)
+stext_coredump_count=0x$(grep 'SYMBOL(_stext)=' $t.vmcoreinfo.2 | wc -l)
+[[ $stext_coredump_count -gt 1 ]] && echo "WARN: More than one _stext match, using the last, if it doesn't work look in file $t.vmcoreinfo.2 and try other matches"
+stext_coredump=0x$(grep 'SYMBOL(_stext)=' $t.vmcoreinfo.2 | tail -1 | cut -d= -f2)
 kaslr=$((stext_coredump-stext_vmlinux))
 echo "kaslr = $kaslr"
 
-phys_base=$(grep 'NUMBER(phys_base)=' $t.vmcoreinfo.2 | cut -d= -f2)
+phys_base_count=$(grep 'NUMBER(phys_base)=' $t.vmcoreinfo.2 | wc -l)
+[[ $phys_base_count -gt 1 ]] && echo "WARN: More than one phys_base match, using the last, if it doesn't work look in file $t.vmcoreinfo.2 and try other matches"
+phys_base=$(grep 'NUMBER(phys_base)=' $t.vmcoreinfo.2 | tail -1 | cut -d= -f2)
 echo "phys_base = $phys_base"
 
 echo "The complete crash command you likely need is:"
